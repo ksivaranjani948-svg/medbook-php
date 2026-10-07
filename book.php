@@ -1,44 +1,27 @@
 <?php
 require "config.php";
 require "auth.php";
+requirePatient();
 
-$patientName = trim($_POST["patient_name"] ?? "");
-$doctorId    = $_POST["doctor_id"] ?? "";
-$date        = $_POST["appt_date"] ?? "";
-$time        = $_POST["appt_time"] ?? "";
-$reason      = trim($_POST["reason"] ?? "");
+$doctorId = $_POST["doctor_id"] ?? "";
+$reason   = trim($_POST["reason"] ?? "");
 
-if ($patientName === "" || $doctorId === "" || $date === "" || $time === "") {
-    header("Location: index.php?error=" . urlencode("Please fill in all required fields."));
+if ($doctorId === "" || $reason === "") {
+    header("Location: index.php?error=" . urlencode("Please choose a doctor and enter a reason."));
     exit;
 }
 
-// Find existing patient by name, or create a new one
-$stmt = $conn->prepare("SELECT patient_id FROM patients WHERE name = ?");
-$stmt->bind_param("s", $patientName);
+$stmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ?");
+$stmt->bind_param("i", $_SESSION["user_id"]);
 $stmt->execute();
-$result = $stmt->get_result();
+$patientId = $stmt->get_result()->fetch_assoc()["patient_id"];
 
-if ($row = $result->fetch_assoc()) {
-    $patientId = $row["patient_id"];
-} else {
-    $insert = $conn->prepare("INSERT INTO patients (name) VALUES (?)");
-    $insert->bind_param("s", $patientName);
-    $insert->execute();
-    $patientId = $insert->insert_id;
-}
-
-// Insert the appointment (UNIQUE KEY on doctor_id+date+time blocks double-booking)
 $stmt = $conn->prepare(
-    "INSERT INTO appointments (doctor_id, patient_id, appt_date, appt_time, reason)
-     VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO appointments (doctor_id, patient_id, reason, status) VALUES (?, ?, ?, 'pending')"
 );
-$stmt->bind_param("iisss", $doctorId, $patientId, $date, $time, $reason);
+$stmt->bind_param("iis", $doctorId, $patientId, $reason);
+$stmt->execute();
 
-if ($stmt->execute()) {
-    header("Location: index.php?success=1");
-} else {
-    header("Location: index.php?error=" . urlencode("That doctor already has an appointment at this date/time."));
-}
+header("Location: index.php?success=1");
 exit;
 ?>

@@ -1,9 +1,6 @@
 <?php
-// Start the session on every page that includes this file.
 session_start();
 
-// Database connection settings.
-// XAMPP's default MySQL has username "root" and no password.
 $host   = "localhost";
 $user   = "root";
 $pass   = "";

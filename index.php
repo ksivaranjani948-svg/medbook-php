@@ -1,76 +1,88 @@
 <?php
 require "config.php";
-require "auth.php"; // redirects to login.php if not logged in
+require "auth.php";
+requirePatient();
 
-// ---- Fetch doctors (used for the dropdown AND the doctor list) ----
+$stmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ?");
+$stmt->bind_param("i", $_SESSION["user_id"]);
+$stmt->execute();
+$myPatientId = $stmt->get_result()->fetch_assoc()["patient_id"];
+
 $doctorsResult = $conn->query("SELECT * FROM doctors ORDER BY name");
 $doctors = [];
 while ($row = $doctorsResult->fetch_assoc()) {
     $doctors[] = $row;
 }
 
-// ---- Fetch all appointments, joined across 3 tables ----
-$appointments = $conn->query("
-    SELECT a.appointment_id, a.appt_date, a.appt_time, a.reason,
-           p.name AS patient_name, d.name AS doctor_name
+$stmt = $conn->prepare("
+    SELECT a.appointment_id, a.status, a.appt_date, a.appt_time, a.reason, d.name AS doctor_name
     FROM appointments a
-    JOIN patients p ON a.patient_id = p.patient_id
-    JOIN doctors  d ON a.doctor_id  = d.doctor_id
-    ORDER BY a.appt_date, a.appt_time
+    JOIN doctors d ON a.doctor_id = d.doctor_id
+    WHERE a.patient_id = ?
+    ORDER BY a.requested_at DESC
 ");
+$stmt->bind_param("i", $myPatientId);
+$stmt->execute();
+$myAppointments = $stmt->get_result();
 
-// ---- Stats (aggregate SQL queries) ----
-$totalCount  = $conn->query("SELECT COUNT(*) AS c FROM appointments")->fetch_assoc()["c"];
-$todayCount  = $conn->query("SELECT COUNT(*) AS c FROM appointments WHERE appt_date = CURDATE()")->fetch_assoc()["c"];
-$doctorCount = count($doctors);
+$stmt = $conn->prepare("SELECT COUNT(*) AS c FROM appointments WHERE patient_id = ? AND status = 'pending'");
+$stmt->bind_param("i", $myPatientId);
+$stmt->execute();
+$pendingCount = $stmt->get_result()->fetch_assoc()["c"];
 
-$today = date("Y-m-d");
+$stmt = $conn->prepare("SELECT COUNT(*) AS c FROM appointments WHERE patient_id = ? AND status = 'confirmed'");
+$stmt->bind_param("i", $myPatientId);
+$stmt->execute();
+$confirmedCount = $stmt->get_result()->fetch_assoc()["c"];
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MedBook - Appointment Booking</title>
+    <title>MedBook - My Appointments</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="topbar">
-        <h1>MedBook</h1>
-        <div>
-            <span style="margin-right:14px;">Hi, <?= htmlspecialchars($_SESSION["username"]) ?></span>
-            <a href="logout.php">Logout</a>
+        <div class="brand">
+            <div class="cross">+</div>
+            <h1>MedBook</h1>
+            <span class="tag">Patient</span>
+        </div>
+        <div class="right">
+            <span><?= htmlspecialchars($_SESSION["full_name"]) ?></span>
+            <a class="logout" href="logout.php">Logout</a>
         </div>
     </div>
 
     <div class="container">
+        <h2 class="page-title">My Appointments</h2>
+
         <?php if (isset($_GET["success"])): ?>
-            <div class="alert alert-success">Appointment booked successfully.</div>
+            <div class="alert alert-success">Request sent. The clinic will confirm a date &amp; time soon.</div>
         <?php elseif (isset($_GET["error"])): ?>
             <div class="alert alert-error"><?= htmlspecialchars($_GET["error"]) ?></div>
         <?php endif; ?>
 
         <div class="stats">
             <div class="stat-card">
-                <div class="num"><?= $totalCount ?></div>
-                <div class="label">Total Appointments</div>
+                <div class="num"><?= $pendingCount ?></div>
+                <div class="label">Awaiting Confirmation</div>
             </div>
             <div class="stat-card">
-                <div class="num"><?= $todayCount ?></div>
-                <div class="label">Today</div>
+                <div class="num"><?= $confirmedCount ?></div>
+                <div class="label">Confirmed</div>
             </div>
             <div class="stat-card">
-                <div class="num"><?= $doctorCount ?></div>
+                <div class="num"><?= count($doctors) ?></div>
                 <div class="label">Doctors Available</div>
             </div>
         </div>
 
         <div class="grid">
             <div class="card">
-                <h2>Book an Appointment</h2>
+                <h2>Request an Appointment</h2>
+                <p class="hint-text">Pick a doctor and tell us why you need a visit. The clinic will assign an exact date &amp; time and message you.</p>
                 <form action="book.php" method="POST">
-                    <div class="field">
-                        <label>Patient Name</label>
-                        <input type="text" name="patient_name" required>
-                    </div>
                     <div class="field">
                         <label>Doctor</label>
                         <select name="doctor_id" required>
@@ -83,61 +95,48 @@ $today = date("Y-m-d");
                         </select>
                     </div>
                     <div class="field">
-                        <label>Date</label>
-                        <input type="date" name="appt_date" required>
+                        <label>Reason for visit</label>
+                        <textarea name="reason" rows="3" required></textarea>
                     </div>
-                    <div class="field">
-                        <label>Time</label>
-                        <input type="time" name="appt_time" required>
-                    </div>
-                    <div class="field">
-                        <label>Reason</label>
-                        <textarea name="reason" rows="2"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-full">Book Appointment</button>
+                    <button type="submit" class="btn btn-full">Send Request</button>
                 </form>
-
-                <h2 style="margin-top:24px;">Our Doctors</h2>
-                <ul class="doctor-list">
-                    <?php foreach ($doctors as $doc): ?>
-                        <li class="doctor-item">
-                            <?= htmlspecialchars($doc["name"]) ?>
-                            <div class="spec"><?= htmlspecialchars($doc["specialty"]) ?></div>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
             </div>
 
             <div class="card">
-                <h2>All Appointments</h2>
+                <h2>Status of My Requests</h2>
+                <?php if ($myAppointments->num_rows === 0): ?>
+                    <div class="empty-row">You haven't requested any appointments yet.</div>
+                <?php else: ?>
                 <table>
                     <tr>
-                        <th>Patient</th>
                         <th>Doctor</th>
-                        <th>Date</th>
-                        <th>Time</th>
+                        <th>Date &amp; Time</th>
                         <th>Status</th>
                         <th></th>
                     </tr>
-                    <?php while ($a = $appointments->fetch_assoc()): ?>
-                        <?php $isUpcoming = $a["appt_date"] >= $today; ?>
+                    <?php while ($a = $myAppointments->fetch_assoc()): ?>
                         <tr>
-                            <td><?= htmlspecialchars($a["patient_name"]) ?></td>
                             <td><?= htmlspecialchars($a["doctor_name"]) ?></td>
-                            <td><?= $a["appt_date"] ?></td>
-                            <td><?= $a["appt_time"] ?></td>
                             <td>
-                                <span class="badge <?= $isUpcoming ? "badge-upcoming" : "badge-past" ?>">
-                                    <?= $isUpcoming ? "Upcoming" : "Past" ?>
-                                </span>
+                                <?php if ($a["status"] === "confirmed"): ?>
+                                    <?= $a["appt_date"] ?> at <?= $a["appt_time"] ?>
+                                <?php else: ?>
+                                    <span class="text-muted">Not yet assigned</span>
+                                <?php endif; ?>
                             </td>
                             <td>
+                                <span class="badge badge-<?= $a["status"] ?>"><?= ucfirst($a["status"]) ?></span>
+                            </td>
+                            <td>
+                                <?php if ($a["status"] !== "cancelled"): ?>
                                 <a class="cancel-link" href="cancel.php?id=<?= $a["appointment_id"] ?>"
-                                   onclick="return confirm('Cancel this appointment?');">Cancel</a>
+                                   onclick="return confirm('Cancel this appointment request?');">Cancel</a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endwhile; ?>
                 </table>
+                <?php endif; ?>
             </div>
         </div>
     </div>
