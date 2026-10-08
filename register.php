@@ -60,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <?php if ($error): ?>
             <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
             <div class="field">
                 <label>Full Name</label>
                 <input type="text" name="full_name" required autofocus>
@@ -75,11 +75,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </div>
             <div class="field">
                 <label>Username</label>
-                <input type="text" name="username" required>
+            <input type="text" name="username" autocomplete="off" required>   
             </div>
             <div class="field">
                 <label>Password</label>
-                <input type="password" name="password" required>
+                <input type="password" name="password" autocomplete="new-password" required>
             </div>
             <button type="submit" class="btn btn-full">Register</button>
         </form>

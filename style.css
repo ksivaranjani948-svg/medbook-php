@@ -264,3 +264,22 @@ th { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-s
     text-decoration: none;
 }
 .btn-cancel-appt:hover { background: #fbd0d4; }
+/* soft page background */
+body { background: linear-gradient(180deg, #d5eee9 0, var(--bg) 360px) fixed; }
+
+/* login/register background with soft glow circles */
+.auth-page {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(255,255,255,.14), transparent 35%),
+        radial-gradient(circle at 85% 80%, rgba(255,255,255,.10), transparent 40%),
+        linear-gradient(160deg, var(--teal-dark), var(--teal) 60%, #0e8f84);
+}
+
+/* nicer cards */
+.card, .appt-card { box-shadow: 0 4px 14px rgba(15, 118, 110, .08); }
+.appt-grid .appt-card { border-top: 4px solid var(--teal); transition: transform .2s; }
+.appt-grid .appt-card:hover { transform: translateY(-3px); }
+
+/* textarea + lighter placeholder so it doesn't look pre-filled */
+.field textarea { resize: vertical; }
+::placeholder { color: #a9b6b3; }

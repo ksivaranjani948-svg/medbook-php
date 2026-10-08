@@ -78,7 +78,7 @@ $statusLabels = [
                     </div>
                     <div class="field">
                         <label>Reason for Visit</label>
-                        <input type="text" name="reason" placeholder="e.g. Tooth pain" required>
+                       <textarea name="reason" rows="4" maxlength="255" placeholder="Describe your problem briefly..." required></textarea>
                     </div>
                     <button type="submit" class="btn btn-full">Send Request</button>
                 </form>
