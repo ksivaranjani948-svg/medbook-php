@@ -109,10 +109,11 @@ $patientCount   = $conn->query("SELECT COUNT(*) AS c FROM patients")->fetch_asso
                         <td>
                             <form action="confirm.php" method="POST" class="inline-form">
                                 <input type="hidden" name="appointment_id" value="<?= $p["appointment_id"] ?>">
-                                <input type="date" name="appt_date" required>
-                                <input type="time" name="appt_time" required>
+                                <input type="date" name="appt_date" min="<?= date("Y-m-d") ?>" required>
+                                <input type="time" name="appt_time" min="09:00" max="17:00" required>
                                 <button type="submit" class="btn btn-small">Confirm</button>
                             </form>
+                            <div class="spec">Clinic hours: 09:00 - 17:00</div>
                         </td>
                         <td>
                             <a class="cancel-link" href="cancel.php?id=<?= $p["appointment_id"] ?>"
