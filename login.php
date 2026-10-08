@@ -64,9 +64,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="auth-link">
             No account? <a href="register.php">Register as a patient</a>
         </div>
-        <div class="sample-hint">
-            Sample admin: admin / admin123 &nbsp;&middot;&nbsp; Sample patient: patient / patient123
-        </div>
     </div>
 </body>
 </html>
