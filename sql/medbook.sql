@@ -50,9 +50,3 @@ INSERT INTO doctors (name, specialty, daily_limit) VALUES
 
 INSERT INTO users (username, password, full_name, role) VALUES
 ('admin', '$2y$10$naJasFat0CC1N8bTSvSvxurQdPwzWi8YiCB9XUdpeIYHfEJe3vLkC', 'Admin', 'admin');
-
-INSERT INTO users (username, password, full_name, role) VALUES
-('patient', '$2y$10$K7tlf28AVJRJzVdRYcyItuUUOSRqtQ9qgcprlitoBPzUWr83gFH22', 'Test Patient', 'patient');
-
-INSERT INTO patients (user_id, name, phone, email) VALUES
-(2, 'Test Patient', '919876543210', 'testpatient@example.com');

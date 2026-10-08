@@ -15,7 +15,8 @@ while ($row = $doctorsResult->fetch_assoc()) {
 }
 
 $stmt = $conn->prepare("
-    SELECT a.appointment_id, a.status, a.appt_date, a.appt_time, a.reason, d.name AS doctor_name
+    SELECT a.appointment_id, a.status, a.appt_date, a.appt_time, a.reason,
+           d.name AS doctor_name, d.specialty
     FROM appointments a
     JOIN doctors d ON a.doctor_id = d.doctor_id
     WHERE a.patient_id = ?
@@ -107,35 +108,30 @@ $confirmedCount = $stmt->get_result()->fetch_assoc()["c"];
                 <?php if ($myAppointments->num_rows === 0): ?>
                     <div class="empty-row">You haven't requested any appointments yet.</div>
                 <?php else: ?>
-                <table>
-                    <tr>
-                        <th>Doctor</th>
-                        <th>Date &amp; Time</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                    <?php while ($a = $myAppointments->fetch_assoc()): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($a["doctor_name"]) ?></td>
-                            <td>
-                                <?php if ($a["status"] === "confirmed"): ?>
-                                    <?= $a["appt_date"] ?> at <?= $a["appt_time"] ?>
-                                <?php else: ?>
-                                    <span class="text-muted">Not yet assigned</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="badge badge-<?= $a["status"] ?>"><?= ucfirst($a["status"]) ?></span>
-                            </td>
-                            <td>
-                                <?php if ($a["status"] !== "cancelled"): ?>
-                                <a class="cancel-link" href="cancel.php?id=<?= $a["appointment_id"] ?>"
-                                   onclick="return confirm('Cancel this appointment request?');">Cancel</a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
-                </table>
+                <?php while ($a = $myAppointments->fetch_assoc()): ?>
+                    <div class="appt-card">
+                        <div class="appt-card-head">
+                            <span class="appt-id">APT-<?= 1000 + $a["appointment_id"] ?></span>
+                            <span class="badge badge-<?= $a["status"] ?>"><?= ucfirst($a["status"]) ?></span>
+                        </div>
+                        <table class="appt-detail">
+                            <tr><th>Doctor</th><td><?= htmlspecialchars($a["doctor_name"]) ?></td></tr>
+                            <tr><th>Specialization</th><td><?= htmlspecialchars($a["specialty"]) ?></td></tr>
+                            <tr><th>Reason</th><td><?= htmlspecialchars($a["reason"]) ?></td></tr>
+                            <tr>
+                                <th>Date</th>
+                                <td><?= $a["status"] === "confirmed" ? date("d M Y", strtotime($a["appt_date"])) : '<span class="text-muted">Not yet assigned</span>' ?></td>
+                            </tr>
+                            <?php if ($a["status"] === "confirmed"): ?>
+                            <tr><th>Time</th><td><?= date("h:i A", strtotime($a["appt_time"])) ?></td></tr>
+                            <?php endif; ?>
+                        </table>
+                        <?php if ($a["status"] !== "cancelled"): ?>
+                        <a class="cancel-link" href="cancel.php?id=<?= $a["appointment_id"] ?>"
+                           onclick="return confirm('Cancel this appointment request?');">Cancel this appointment</a>
+                        <?php endif; ?>
+                    </div>
+                <?php endwhile; ?>
                 <?php endif; ?>
             </div>
         </div>

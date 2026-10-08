@@ -90,6 +90,7 @@ $patientCount   = $conn->query("SELECT COUNT(*) AS c FROM patients")->fetch_asso
             <?php else: ?>
             <table>
                 <tr>
+                    <th>Appt ID</th>
                     <th>Patient</th>
                     <th>Doctor</th>
                     <th>Reason</th>
@@ -98,6 +99,7 @@ $patientCount   = $conn->query("SELECT COUNT(*) AS c FROM patients")->fetch_asso
                 </tr>
                 <?php while ($p = $pending->fetch_assoc()): ?>
                     <tr>
+                        <td class="appt-id">APT-<?= 1000 + $p["appointment_id"] ?></td>
                         <td><?= htmlspecialchars($p["patient_name"]) ?></td>
                         <td>
                             <?= htmlspecialchars($p["doctor_name"]) ?>
@@ -129,6 +131,7 @@ $patientCount   = $conn->query("SELECT COUNT(*) AS c FROM patients")->fetch_asso
             <?php else: ?>
             <table>
                 <tr>
+                    <th>Appt ID</th>
                     <th>Patient</th>
                     <th>Doctor</th>
                     <th>Date</th>
@@ -144,6 +147,7 @@ $patientCount   = $conn->query("SELECT COUNT(*) AS c FROM patients")->fetch_asso
                               . "&body=" . urlencode($message);
                 ?>
                     <tr>
+                        <td class="appt-id">APT-<?= 1000 + $a["appointment_id"] ?></td>
                         <td><?= htmlspecialchars($a["patient_name"]) ?></td>
                         <td><?= htmlspecialchars($a["doctor_name"]) ?></td>
                         <td><?= $a["appt_date"] ?></td>
